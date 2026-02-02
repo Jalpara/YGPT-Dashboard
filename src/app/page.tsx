@@ -2,8 +2,45 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { formatCurrency, formatDate, statusLabels, statusStyles } from "@/lib/sample-data";
+import {
+  formatCurrency,
+  formatDate,
+  statusLabels,
+  statusStyles,
+} from "@/lib/sample-data";
 import { useEventsData } from "@/lib/use-events";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  BarChart,
+  LineChart,
+  Bar,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const QUICK_STAT_DETAILS = {
   proposals: "Awaiting trustee review",
@@ -109,15 +146,15 @@ export default function Home() {
           title: "Event volume",
           subtitle: "Monthly events created vs completed",
           months: months.map((item) => item.label),
-          created: volumeCreated.map((value) => Math.max(1, value)),
-          completed: volumeCompleted.map((value) => Math.max(0, value)),
+          created: volumeCreated,
+          completed: volumeCompleted,
         },
         finance: {
           title: "Budget vs spent",
           subtitle: "Planned allocation compared to actual spend",
           months: months.map((item) => item.label),
-          budget: budgetTotals.map((value) => Math.max(0, Math.round(value / 1000))),
-          spent: spentTotals.map((value) => Math.max(0, Math.round(value / 1000))),
+          budget: budgetTotals.map((value) => Math.round(value / 1000)),
+          spent: spentTotals.map((value) => Math.round(value / 1000)),
         },
         status: {
           title: "Status mix",
@@ -128,504 +165,457 @@ export default function Home() {
             Math.round((statusCounts.completed / statusTotal) * 100),
           ],
           labels: ["Approved", "In progress", "Completed"],
-          colors: ["bg-brand-green", "bg-brand-teal", "bg-brand-purple"],
         },
       },
     };
   }, [events]);
   return (
-    <div className="relative overflow-hidden px-6 py-8 md:px-8 md:py-10 page-animate">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-20 top-8 h-40 w-40 rounded-full bg-brand-orange opacity-15 blur-[90px]" />
-        <div className="absolute right-10 top-24 h-40 w-40 rounded-full bg-brand-yellow opacity-12 blur-[110px]" />
-      </div>
-
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-12 pb-16">
+    <div className="px-6 py-8 md:px-8 md:py-10">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10">
         {error ? (
-          <div className="rounded-[var(--radius-card)] border border-brand-orange/30 bg-brand-orange/10 px-6 py-4 text-sm text-brand-dark shadow-[var(--shadow-soft)]">
-            {error}
-          </div>
+          <Card className="border-destructive/30 bg-destructive/10">
+            <CardContent className="py-4 text-sm">{error}</CardContent>
+          </Card>
         ) : null}
         <header className="flex flex-wrap items-center justify-between gap-6">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-[var(--muted)] font-lemon">
+            <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">
               YGPT Dashboard
             </p>
-            <h1 className="text-4xl font-semibold text-[var(--foreground)] md:text-5xl">
+            <h1 className="text-3xl font-semibold md:text-4xl">
               Event operations at a glance.
             </h1>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--card)] px-5 py-2 text-sm font-medium text-[var(--foreground)] shadow-[var(--shadow-soft)]">
-              Invite user
-            </button>
-            <button className="rounded-[var(--radius-pill)] bg-brand-orange px-5 py-2 text-sm font-semibold text-white shadow-[var(--shadow-card)]">
-              Sync from Apps Script
-            </button>
+            <Button variant="outline">Invite user</Button>
+            <Button>Sync from Apps Script</Button>
           </div>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-          <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--card)] p-8 shadow-[var(--shadow-card)]">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--muted)] font-lemon">
-                  Analytics
-                </p>
-                <h2 className="mt-3 text-3xl font-semibold text-[var(--foreground)]">
-                  Operational insights
-                </h2>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  Track event velocity, spending, and pipeline health across
-                  teams.
-                </p>
+        <section className="grid gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+          <Card>
+            <CardHeader className="space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <CardTitle>Operational insights</CardTitle>
+                  <CardDescription>
+                    Track event velocity, spending, and pipeline health across teams.
+                  </CardDescription>
+                </div>
+                <Badge variant="secondary">Sep 2025 - Feb 2026</Badge>
               </div>
-              <div className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
-                Sep 2025 - Feb 2026
-              </div>
-            </div>
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AnalyticsTab)}>
+                <TabsList>
+                  <TabsTrigger value="volume">Event volume</TabsTrigger>
+                  <TabsTrigger value="finance">Budget vs spent</TabsTrigger>
+                  <TabsTrigger value="status">Status mix</TabsTrigger>
+                </TabsList>
+                <TabsContent value="volume">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">{chartData.volume.title}</p>
+                      <p className="text-xs text-muted-foreground">{chartData.volume.subtitle}</p>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                        Created
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-muted-foreground" />
+                        Completed
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-56">
+                    {loading ? (
+                      <Skeleton className="h-full w-full" />
+                    ) : chartData.volume.created.every((value) => value === 0) &&
+                      chartData.volume.completed.every((value) => value === 0) ? (
+                      <div className="flex h-full items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
+                        No volume data yet.
+                      </div>
+                    ) : (
+                      <ChartContainer
+                        config={{
+                          created: { label: "Created", color: "hsl(var(--primary))" },
+                          completed: { label: "Completed", color: "hsl(var(--muted-foreground))" },
+                        }}
+                      >
+                        <BarChart
+                          data={chartData.volume.months.map((month, index) => ({
+                            month,
+                            created: chartData.volume.created[index],
+                            completed: chartData.volume.completed[index],
+                          }))}
+                          margin={{ left: 8, right: 8 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                          <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
+                          <ChartTooltipContent />
+                          <Bar dataKey="created" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} barSize={18} />
+                          <Bar dataKey="completed" fill="hsl(var(--secondary-foreground))" radius={[6, 6, 0, 0]} barSize={18} />
+                        </BarChart>
+                      </ChartContainer>
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent value="finance">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold">{chartData.finance.title}</p>
+                      <p className="text-xs text-muted-foreground">{chartData.finance.subtitle}</p>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-secondary" />
+                        Budget
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                        Spent
+                      </span>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-56">
+                    {loading ? (
+                      <Skeleton className="h-full w-full" />
+                    ) : chartData.finance.budget.every((value) => value === 0) &&
+                      chartData.finance.spent.every((value) => value === 0) ? (
+                      <div className="flex h-full items-center justify-center rounded-md border border-dashed text-sm text-muted-foreground">
+                        No finance data yet.
+                      </div>
+                    ) : (
+                      <ChartContainer
+                        config={{
+                          budget: { label: "Budget", color: "hsl(var(--secondary-foreground))" },
+                          spent: { label: "Spent", color: "hsl(var(--primary))" },
+                        }}
+                      >
+                        <LineChart
+                          data={chartData.finance.months.map((month, index) => ({
+                            month,
+                            budget: chartData.finance.budget[index],
+                            spent: chartData.finance.spent[index],
+                          }))}
+                          margin={{ left: 8, right: 8 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                          <YAxis tickLine={false} axisLine={false} />
+                          <ChartTooltipContent />
+                          <Line dataKey="budget" stroke="hsl(var(--secondary-foreground))" strokeWidth={2} dot={false} />
+                          <Line dataKey="spent" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                        </LineChart>
+                      </ChartContainer>
+                    )}
+                  </div>
+                </TabsContent>
+                <TabsContent value="status">
+                  <div className="grid gap-6 md:grid-cols-[0.6fr_0.4fr]">
+                    <div className="flex items-center justify-center">
+                      {loading ? (
+                        <Skeleton className="h-48 w-48 rounded-full" />
+                      ) : (
+                        <ChartContainer
+                          config={{
+                            approved: { label: "Approved", color: "hsl(var(--primary))" },
+                            inProgress: { label: "In progress", color: "hsl(var(--secondary-foreground))" },
+                            completed: { label: "Completed", color: "hsl(var(--muted-foreground))" },
+                          }}
+                          className="h-56 w-full"
+                        >
+                          <PieChart>
+                            <ChartTooltipContent />
+                            <Pie
+                              data={chartData.status.labels.map((label, index) => ({
+                                name: label,
+                                value: chartData.status.values[index],
+                                color:
+                                  index === 0
+                                    ? "hsl(var(--primary))"
+                                    : index === 1
+                                    ? "hsl(var(--secondary-foreground))"
+                                    : "hsl(var(--muted-foreground))",
+                              }))}
+                              dataKey="value"
+                              nameKey="name"
+                              innerRadius={55}
+                              outerRadius={80}
+                              paddingAngle={4}
+                            >
+                              {chartData.status.values.map((_, index) => (
+                                <Cell
+                                  key={chartData.status.labels[index]}
+                                  fill={
+                                    index === 0
+                                      ? "hsl(var(--primary))"
+                                      : index === 1
+                                      ? "hsl(var(--secondary-foreground))"
+                                      : "hsl(var(--muted-foreground))"
+                                  }
+                                />
+                              ))}
+                            </Pie>
+                          </PieChart>
+                        </ChartContainer>
+                      )}
+                    </div>
+                    <div className="space-y-4">
+                      <p className="text-sm font-semibold">{chartData.status.title}</p>
+                      <p className="text-xs text-muted-foreground">{chartData.status.subtitle}</p>
+                      <div className="mt-4 space-y-3">
+                        {loading
+                          ? Array.from({ length: 3 }, (_, index) => (
+                              <div key={index} className="flex items-center justify-between">
+                                <Skeleton className="h-3 w-32" />
+                                <Skeleton className="h-3 w-10" />
+                              </div>
+                            ))
+                          : chartData.status.labels.map((label, index) => (
+                              <div key={label} className="flex items-center justify-between">
+                                <span className="text-sm">{label}</span>
+                                <span className="text-sm font-semibold">
+                                  {chartData.status.values[index]}%
+                                </span>
+                              </div>
+                            ))}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardHeader>
+          </Card>
 
-            <div className="mt-6 flex flex-wrap items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-white/90 p-1 text-xs font-semibold uppercase tracking-[0.2em]">
-              {[
-                { id: "volume" as const, label: "Event volume" },
-                { id: "finance" as const, label: "Budget vs spent" },
-                { id: "status" as const, label: "Status mix" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`rounded-[var(--radius-pill)] px-4 py-2 transition ${
-                    activeTab === tab.id
-                      ? "bg-brand-orange text-white shadow-[var(--shadow-soft)]"
-                      : "text-[var(--muted)]"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {activeTab === "volume" ? (
-              <div className="mt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--foreground)]">
-                      {chartData.volume.title}
-                    </p>
-                    <p className="text-xs text-[var(--muted)]">
-                      {chartData.volume.subtitle}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-brand-orange" />
-                      Created
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-brand-purple" />
-                      Completed
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-6 grid grid-cols-6 items-end gap-4">
-                  {loading
-                    ? Array.from({ length: 6 }, (_, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex items-end gap-2">
-                            <div className="h-20 w-3 rounded-[var(--radius-pill)] bg-black/10" />
-                            <div className="h-14 w-3 rounded-[var(--radius-pill)] bg-black/5" />
-                          </div>
-                          <div className="h-3 w-8 rounded-full bg-black/10" />
-                        </div>
-                      ))
-                    : chartData.volume.months.map((month, index) => (
-                        <div key={month} className="space-y-2">
-                          <div className="flex items-end gap-2">
-                            <div
-                              className="w-3 rounded-[var(--radius-pill)] bg-brand-orange"
-                              style={{
-                                height: `${chartData.volume.created[index] * 3}px`,
-                              }}
-                            />
-                            <div
-                              className="w-3 rounded-[var(--radius-pill)] bg-brand-purple"
-                              style={{
-                                height: `${chartData.volume.completed[index] * 3}px`,
-                              }}
-                            />
-                          </div>
-                          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                            {month}
-                          </p>
-                        </div>
-                      ))}
-                </div>
-              </div>
-            ) : null}
-
-            {activeTab === "finance" ? (
-              <div className="mt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--foreground)]">
-                      {chartData.finance.title}
-                    </p>
-                    <p className="text-xs text-[var(--muted)]">
-                      {chartData.finance.subtitle}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-brand-teal" />
-                      Budget
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-brand-green" />
-                      Spent
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-6 grid grid-cols-6 items-end gap-4">
-                  {loading
-                    ? Array.from({ length: 6 }, (_, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex items-end gap-2">
-                            <div className="h-20 w-3 rounded-[var(--radius-pill)] bg-black/10" />
-                            <div className="h-14 w-3 rounded-[var(--radius-pill)] bg-black/5" />
-                          </div>
-                          <div className="h-3 w-8 rounded-full bg-black/10" />
-                        </div>
-                      ))
-                    : chartData.finance.months.map((month, index) => (
-                        <div key={month} className="space-y-2">
-                          <div className="flex items-end gap-2">
-                            <div
-                              className="w-3 rounded-[var(--radius-pill)] bg-brand-teal"
-                              style={{
-                                height: `${chartData.finance.budget[index] / 3}px`,
-                              }}
-                            />
-                            <div
-                              className="w-3 rounded-[var(--radius-pill)] bg-brand-green"
-                              style={{
-                                height: `${chartData.finance.spent[index] / 3}px`,
-                              }}
-                            />
-                          </div>
-                          <p className="text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                            {month}
-                          </p>
-                        </div>
-                      ))}
-                </div>
-              </div>
-            ) : null}
-
-            {activeTab === "status" ? (
-              <div className="mt-6 grid gap-6 md:grid-cols-[0.6fr_0.4fr]">
-                <div className="flex items-center justify-center">
-                  {loading ? (
-                    <div className="h-48 w-48 rounded-full bg-black/10" />
-                  ) : (
-                    <div
-                      className="h-48 w-48 rounded-full"
-                      style={{
-                        background:
-                          "conic-gradient(#00A651 0% 44%, #4EB8B9 44% 66%, #936FB1 66% 100%)",
-                      }}
-                    />
-                  )}
-                </div>
-                <div className="space-y-4">
-                  <p className="text-sm font-semibold text-[var(--foreground)]">
-                    {chartData.status.title}
-                  </p>
-                  <p className="text-xs text-[var(--muted)]">
-                    {chartData.status.subtitle}
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    {loading
-                      ? Array.from({ length: 3 }, (_, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="h-3 w-3 rounded-full bg-black/10" />
-                              <span className="h-3 w-24 rounded-full bg-black/10" />
-                            </div>
-                            <span className="h-3 w-10 rounded-full bg-black/10" />
-                          </div>
-                        ))
-                      : chartData.status.labels.map((label, index) => (
-                          <div
-                            key={label}
-                            className="flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span
-                                className={`h-3 w-3 rounded-full ${chartData.status.colors[index]}`}
-                              />
-                              <span className="text-sm text-[var(--foreground)]">
-                                {label}
-                              </span>
-                            </div>
-                            <span className="text-sm font-semibold text-[var(--foreground)]">
-                              {chartData.status.values[index]}%
-                            </span>
-                          </div>
-                        ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-          </div>
           <div className="grid gap-4">
             {loading
               ? [0, 1, 2].map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-5 shadow-[var(--shadow-soft)]"
-                  >
-                    <div className="h-3 w-24 rounded-full bg-black/10" />
-                    <div className="mt-4 h-8 w-20 rounded-full bg-black/10" />
-                    <div className="mt-3 h-3 w-32 rounded-full bg-black/10" />
-                  </div>
+                  <Card key={item}>
+                    <CardContent className="space-y-3 pt-6">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-8 w-20" />
+                      <Skeleton className="h-3 w-32" />
+                    </CardContent>
+                  </Card>
                 ))
               : quickStats.map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-5 shadow-[var(--shadow-soft)]"
-                  >
-                    <p className="text-xs uppercase tracking-[0.3em] text-[var(--muted)] font-lemon">
-                      {stat.label}
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold text-[var(--foreground)]">
-                      {stat.value}
-                    </p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
+                  <Card key={stat.label}>
+                    <CardHeader className="pb-2">
+                      <CardDescription className="uppercase tracking-[0.2em]">
+                        {stat.label}
+                      </CardDescription>
+                      <CardTitle className="text-2xl">{stat.value}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0 text-sm text-muted-foreground">
                       {stat.detail}
-                    </p>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
           </div>
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--card)] p-8 shadow-[var(--shadow-card)]">
-            <div className="flex flex-wrap items-center justify-between gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <h3 className="text-2xl font-semibold">Live events</h3>
-                <p className="mt-2 text-sm text-[var(--muted)]">
+                <CardTitle>Live events</CardTitle>
+                <CardDescription>
                   Track proposals, approvals, and completions across cities.
-                </p>
+                </CardDescription>
               </div>
-              <Link
-                href="/events"
-                className="text-sm font-semibold text-brand-orange"
-              >
-                View all events
-              </Link>
-            </div>
-            <div className="mt-6 overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[var(--card)] text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                  <tr>
-                    <th className="px-4 py-3">Code</th>
-                    <th className="px-4 py-3">Event</th>
-                    <th className="px-4 py-3">Date</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3 text-right">Budget</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Button asChild variant="link">
+                <Link href="/events">View all events</Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Event</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Budget</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {loading
                     ? Array.from({ length: 5 }, (_, index) => (
-                        <tr key={index} className="border-t border-[var(--border)]">
+                        <TableRow key={index}>
                           {Array.from({ length: 5 }, (_, cell) => (
-                            <td key={cell} className="px-4 py-3">
-                              <div className="h-3 w-20 rounded-full bg-black/10" />
-                            </td>
+                            <TableCell key={cell}>
+                              <Skeleton className="h-3 w-20" />
+                            </TableCell>
                           ))}
-                        </tr>
+                        </TableRow>
                       ))
                     : events.map((event) => (
-                        <tr
-                          key={event.code}
-                          className={`border-t border-[var(--border)] ${
-                            selectedCode === event.code
-                              ? "bg-brand-orange/5"
-                              : "bg-white"
-                          }`}
-                        >
-                          <td className="px-4 py-3 text-xs uppercase tracking-[0.2em] text-[var(--muted)] font-lemon">
+                        <TableRow key={event.code}>
+                          <TableCell className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
                             {event.code}
-                          </td>
-                          <td className="px-4 py-3">
+                          </TableCell>
+                          <TableCell>
                             <button
                               onClick={() => setSelectedCode(event.code)}
-                              className="text-left font-semibold text-[var(--foreground)] hover:text-brand-orange"
+                              className="text-left font-semibold hover:underline"
                             >
                               {event.title}
                             </button>
-                            <p className="text-xs text-[var(--muted)]">
+                            <p className="text-xs text-muted-foreground">
                               {event.city}
                             </p>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-[var(--muted)]">
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
                             {formatDate(event.date)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center rounded-[var(--radius-pill)] border px-3 py-1 text-xs font-semibold ${
-                                statusStyles[event.status]
-                              }`}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={statusStyles[event.status]}
                             >
                               {statusLabels[event.status]}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right text-sm text-[var(--muted)]">
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
                             {formatCurrency(event.budget)}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className="space-y-6">
-            <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--card)] p-6 shadow-[var(--shadow-soft)]">
-              <h3 className="text-xl font-semibold">Selected event</h3>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Review details before approval.
-              </p>
-              {loading ? (
-                <div className="mt-4 space-y-3">
-                  <div className="h-3 w-32 rounded-full bg-black/10" />
-                  <div className="h-6 w-40 rounded-full bg-black/10" />
-                  <div className="h-3 w-28 rounded-full bg-black/10" />
-                </div>
-              ) : selectedCode ? (
-                (() => {
-                  const selected = events.find((event) => event.code === selectedCode);
-                  if (!selected) return null;
-                  return (
-                    <div className="mt-4 space-y-3 text-sm">
-                      <p className="text-xs uppercase tracking-[0.3em] font-lemon text-[var(--muted)]">
-                        {selected.code}
-                      </p>
-                      <p className="text-lg font-semibold text-[var(--foreground)]">
-                        {selected.title}
-                      </p>
-                      <p className="text-sm text-[var(--muted)]">
-                        {selected.city} • {formatDate(selected.date)} • Lead: {selected.lead}
-                      </p>
-                      <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 px-4 py-3">
-                        <p className="text-xs uppercase tracking-[0.3em] font-lemon text-[var(--muted)]">
-                          Objective
-                        </p>
-                        <p className="mt-2 text-sm text-[var(--foreground)]">
-                          {selected.objective}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        <span className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-3 py-1">
-                          {selected.eventType}
-                        </span>
-                        <span className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-3 py-1">
-                          {selected.proposalType}
-                        </span>
-                        <span className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-3 py-1">
-                          Budget {formatCurrency(selected.budgetTotal)}
-                        </span>
-                      </div>
-                      <Link
-                        href={`/events/${selected.code}`}
-                        className="text-sm font-semibold text-brand-orange"
-                      >
-                        View full details →
-                      </Link>
-                    </div>
-                  );
-                })()
-              ) : (
-                <p className="mt-4 text-sm text-[var(--muted)]">
-                  Select an event from the list to review details.
-                </p>
-              )}
-            </div>
-            <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--card)] p-6 shadow-[var(--shadow-soft)]">
-              <h3 className="text-xl font-semibold">Forms access</h3>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Direct links to the live EPF and ECR forms.
-              </p>
-              <div className="mt-4 flex flex-col gap-3 text-sm">
-                <a
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSfnCUKzk4Fb5ubGzRB6ROaymRFhxlKqVgYnLTC45m4gKN-VvA/viewform"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 px-4 py-3"
-                >
-                  Event Proposal Form (EPF)
-                  <span className="text-brand-orange">↗</span>
-                </a>
-                <a
-                  href="https://docs.google.com/forms/d/e/1FAIpQLScE_gI2KKfxnx9Hi_gaVYpUvJS_68KNqys1-XngSP--ASeasg/viewform"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 px-4 py-3"
-                >
-                  Event Completion Form (ECR)
-                  <span className="text-brand-yellow">↗</span>
-                </a>
-              </div>
-            </div>
-            <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--card)] p-6 shadow-[var(--shadow-soft)]">
-              <h3 className="text-xl font-semibold">Quick access</h3>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Jump straight to what trustees ask for most.
-              </p>
-              <div className="mt-4 flex flex-col gap-3 text-sm">
-                <Link
-                  href="/invoices"
-                  className="flex items-center justify-between rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 px-4 py-3"
-                >
-                  Invoices and payments
-                  <span className="text-brand-green">→</span>
-                </Link>
-                <Link
-                  href="/photos"
-                  className="flex items-center justify-between rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 px-4 py-3"
-                >
-                  Event photos
-                  <span className="text-brand-yellow">→</span>
-                </Link>
-              </div>
-            </div>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
 
-            <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-6 shadow-[var(--shadow-soft)]">
-              <h3 className="text-xl font-semibold">Sync snapshot</h3>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                Last run: Feb 2, 2026 • 08:30 AM IST
-              </p>
-              <div className="mt-4 space-y-3 text-sm text-[var(--muted)]">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Selected event</CardTitle>
+                <CardDescription>Review details before approval.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-3 w-32" />
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                ) : selectedCode ? (
+                  (() => {
+                    const selected = events.find((event) => event.code === selectedCode);
+                    if (!selected) return null;
+                    return (
+                      <div className="space-y-3 text-sm">
+                        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                          {selected.code}
+                        </p>
+                        <p className="text-lg font-semibold">{selected.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selected.city} • {formatDate(selected.date)} • Lead: {selected.lead}
+                        </p>
+                        <Card className="bg-muted/30">
+                          <CardHeader className="pb-2">
+                            <CardDescription className="uppercase tracking-[0.2em]">
+                              Objective
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-0 text-sm">
+                            {selected.objective}
+                          </CardContent>
+                        </Card>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <Badge variant="secondary">{selected.eventType}</Badge>
+                          <Badge variant="secondary">{selected.proposalType}</Badge>
+                          <Badge variant="secondary">
+                            Budget {formatCurrency(selected.budgetTotal)}
+                          </Badge>
+                        </div>
+                        <Button asChild variant="link" className="px-0">
+                          <Link href={`/events/${selected.code}`}>
+                            View full details →
+                          </Link>
+                        </Button>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Select an event from the list to review details.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Forms access</CardTitle>
+                <CardDescription>Direct links to the live EPF and ECR forms.</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <Button asChild variant="outline" className="justify-between">
+                  <a
+                    href="https://docs.google.com/forms/d/e/1FAIpQLSfnCUKzk4Fb5ubGzRB6ROaymRFhxlKqVgYnLTC45m4gKN-VvA/viewform"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Event Proposal Form (EPF)
+                    <span>↗</span>
+                  </a>
+                </Button>
+                <Button asChild variant="outline" className="justify-between">
+                  <a
+                    href="https://docs.google.com/forms/d/e/1FAIpQLScE_gI2KKfxnx9Hi_gaVYpUvJS_68KNqys1-XngSP--ASeasg/viewform"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Event Completion Form (ECR)
+                    <span>↗</span>
+                  </a>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick access</CardTitle>
+                <CardDescription>
+                  Jump straight to what trustees ask for most.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <Button asChild variant="outline" className="justify-between">
+                  <Link href="/invoices">Invoices and payments</Link>
+                </Button>
+                <Button asChild variant="outline" className="justify-between">
+                  <Link href="/photos">Event photos</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Sync snapshot</CardTitle>
+                <CardDescription>Last run: Feb 2, 2026 • 08:30 AM IST</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
                 <div className="flex items-center justify-between">
                   <span>EPF responses ingested</span>
-                  <span className="font-semibold text-[var(--foreground)]">42</span>
+                  <span className="font-semibold text-foreground">42</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>ECR responses ingested</span>
-                  <span className="font-semibold text-[var(--foreground)]">31</span>
+                  <span className="font-semibold text-foreground">31</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Drive folders indexed</span>
-                  <span className="font-semibold text-[var(--foreground)]">18</span>
+                  <span className="font-semibold text-foreground">18</span>
                 </div>
-              </div>
-              <button className="mt-5 w-full rounded-[var(--radius-pill)] border border-[var(--border)] bg-[var(--accent-soft)] px-4 py-2 text-sm font-semibold text-[var(--foreground)]">
-                Configure Apps Script
-              </button>
-            </div>
+                <Button variant="secondary" className="w-full">
+                  Configure Apps Script
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </section>
       </div>

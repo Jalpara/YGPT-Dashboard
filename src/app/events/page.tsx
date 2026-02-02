@@ -2,8 +2,40 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { formatCurrency, formatDate, statusLabels, statusStyles } from "@/lib/sample-data";
+import {
+  formatCurrency,
+  formatDate,
+  statusLabels,
+  statusStyles,
+} from "@/lib/sample-data";
 import { useEventsData } from "@/lib/use-events";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const filters = ["All", "Proposal", "Approved", "In Progress", "Completed"];
 const views = ["Table", "List", "Grid"] as const;
@@ -80,132 +112,109 @@ function EventCalendar({
   );
 
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-6 shadow-[var(--shadow-soft)]">
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex min-w-[240px] flex-1 items-center gap-3 rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--muted)] shadow-[var(--shadow-soft)]">
-          <span className="text-lg">🔍</span>
-          <input
-            className="w-full bg-transparent outline-none"
-            placeholder="Search events..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em]">
-          <div className="flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-2 py-2 shadow-[var(--shadow-soft)]">
-            {modeFilters.map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setModeFilter(mode)}
-                className={`rounded-[var(--radius-pill)] px-4 py-1.5 ${
-                  modeFilter === mode
-                    ? "bg-brand-orange text-white"
-                    : "text-[var(--muted)]"
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
+    <Card>
+      <CardHeader className="gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="min-w-[220px] flex-1">
+            <Input
+              placeholder="Search events..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
           </div>
-          <button className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-4 py-2 text-[var(--muted)] shadow-[var(--shadow-soft)]">
-            Upcoming First
-          </button>
-          <div className="flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-2 py-2 shadow-[var(--shadow-soft)]">
-            <button className="rounded-[var(--radius-pill)] bg-brand-orange px-3 py-2 text-white">
-              📅
-            </button>
-            <button className="rounded-[var(--radius-pill)] px-3 py-2 text-[var(--muted)]">
-              ▦
-            </button>
-            <button className="rounded-[var(--radius-pill)] px-3 py-2 text-[var(--muted)]">
-              ≡
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8 flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-brand-dark">
-          {monthLabel}
-        </h2>
-        <div className="flex items-center gap-2 text-lg text-[var(--muted)]">
-          <button
-            className="rounded-full border border-[var(--border)] bg-white px-3 py-1 shadow-[var(--shadow-soft)]"
-            onClick={() =>
-              setMonthCursor(
-                new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1)
-              )
+          <Select
+            value={modeFilter}
+            onValueChange={(value) =>
+              setModeFilter(value as (typeof modeFilters)[number])
             }
           >
-            ←
-          </button>
-          <button
-            className="rounded-full border border-[var(--border)] bg-white px-3 py-1 shadow-[var(--shadow-soft)]"
-            onClick={() =>
-              setMonthCursor(
-                new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1)
-              )
-            }
-          >
-            →
-          </button>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Mode" />
+            </SelectTrigger>
+            <SelectContent>
+              {modeFilters.map((mode) => (
+                <SelectItem key={mode} value={mode}>
+                  {mode}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline">Upcoming First</Button>
         </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-7 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
-          <div key={label} className="border border-[var(--border)] px-4 py-3">
-            {label}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 border-l border-b border-[var(--border)]">
-        {calendarDays.map((item, index) => {
-          const matches = item.isMuted
-            ? []
-            : eventsByDay[item.day.toString()] ?? [];
-          return (
-            <div
-              key={`${item.day}-${index}`}
-              className="min-h-[120px] border-t border-r border-[var(--border)] bg-white px-3 py-2 text-sm"
+        <div className="flex items-center justify-between">
+          <CardTitle>{monthLabel}</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() =>
+                setMonthCursor(
+                  new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1)
+                )
+              }
             >
-              <div
-                className={`text-xs font-semibold ${
-                  item.isMuted ? "text-[var(--muted)]/50" : "text-brand-orange"
-                }`}
-              >
-                {item.day}
-              </div>
-              <div className="mt-2 space-y-2">
-                {loading
-                  ? Array.from({ length: 2 }, (_, idx) => (
-                      <div
-                        key={idx}
-                        className="h-5 w-full rounded-full bg-black/10"
-                      />
-                    ))
-                  : matches.map((evt, idx) => (
-                      <div
-                        key={`${evt.code}-${idx}`}
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          evt.status === "completed"
-                            ? "bg-brand-green/15 text-brand-green"
-                            : evt.status === "in_progress"
-                            ? "bg-brand-teal/15 text-brand-teal"
-                            : evt.status === "approved"
-                            ? "bg-brand-purple/15 text-brand-purple"
-                            : "bg-brand-orange/15 text-brand-orange"
-                        }`}
-                      >
-                        {evt.title}
-                      </div>
-                    ))}
-              </div>
+              ←
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() =>
+                setMonthCursor(
+                  new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1)
+                )
+              }
+            >
+              →
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="grid grid-cols-7 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
+            <div key={label} className="border-b px-3 py-2">
+              {label}
             </div>
-          );
-        })}
-      </div>
-    </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 border-l border-b">
+          {calendarDays.map((item, index) => {
+            const matches = item.isMuted
+              ? []
+              : eventsByDay[item.day.toString()] ?? [];
+            return (
+              <div
+                key={`${item.day}-${index}`}
+                className="min-h-[110px] border-t border-r bg-background px-3 py-2 text-sm"
+              >
+                <div
+                  className={`text-xs font-semibold ${
+                    item.isMuted ? "text-muted-foreground/50" : "text-primary"
+                  }`}
+                >
+                  {item.day}
+                </div>
+                <div className="mt-2 space-y-2">
+                  {loading
+                    ? Array.from({ length: 2 }, (_, idx) => (
+                        <Skeleton key={idx} className="h-5 w-full" />
+                      ))
+                    : matches.map((evt, idx) => (
+                        <Badge
+                          key={`${evt.code}-${idx}`}
+                          variant="secondary"
+                          className="w-full justify-start"
+                        >
+                          {evt.title}
+                        </Badge>
+                      ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -239,29 +248,28 @@ export default function EventsPage() {
   }, [activeFilter, modeFilter, searchTerm, events]);
 
   return (
-    <div className="px-6 py-8 md:px-8 md:py-10 page-animate">
+    <div className="px-6 py-8 md:px-8 md:py-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         {error ? (
-          <div className="rounded-[var(--radius-card)] border border-brand-orange/30 bg-brand-orange/10 px-6 py-4 text-sm text-brand-dark shadow-[var(--shadow-soft)]">
-            {error}
-          </div>
+          <Card className="border-destructive/30 bg-destructive/10">
+            <CardContent className="py-4 text-sm">{error}</CardContent>
+          </Card>
         ) : null}
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-[var(--muted)] font-lemon">
+            <p className="text-xs uppercase tracking-[0.4em] text-muted-foreground">
               Events
             </p>
-            <h1 className="mt-2 text-4xl font-semibold">Event tracker</h1>
-            <p className="mt-3 text-sm text-[var(--muted)]">
+            <h1 className="mt-2 text-3xl font-semibold md:text-4xl">
+              Event tracker
+            </h1>
+            <p className="mt-3 text-sm text-muted-foreground">
               Review every event proposal and completion cycle by code.
             </p>
           </div>
-          <Link
-            href="/"
-            className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white/80 px-4 py-2 text-sm font-semibold"
-          >
-            Back to dashboard
-          </Link>
+          <Button asChild variant="outline">
+            <Link href="/">Back to dashboard</Link>
+          </Button>
         </header>
 
         <EventCalendar
@@ -276,240 +284,187 @@ export default function EventsPage() {
         />
 
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
             {filters.map((filter) => (
-              <button
+              <Button
                 key={filter}
+                size="sm"
+                variant={activeFilter === filter ? "default" : "outline"}
                 onClick={() => setActiveFilter(filter)}
-                className={`rounded-[var(--radius-pill)] border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] shadow-[var(--shadow-soft)] ${
-                  activeFilter === filter
-                    ? "border-brand-orange bg-brand-orange text-white"
-                    : "border-[var(--border)] bg-[var(--card)] text-[var(--foreground)]"
-                }`}
               >
                 {filter}
-              </button>
+              </Button>
             ))}
           </div>
-          <div className="flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border)] bg-white/80 p-1 text-xs font-semibold uppercase tracking-[0.2em]">
-            {views.map((view) => (
-              <button
-                key={view}
-                onClick={() => setViewMode(view)}
-                className={`rounded-[var(--radius-pill)] px-4 py-2 ${
-                  viewMode === view
-                    ? "bg-brand-purple text-white shadow-[var(--shadow-soft)]"
-                    : "text-[var(--muted)]"
-                }`}
-              >
-                {view}
-              </button>
-            ))}
-          </div>
+          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+            <TabsList>
+              {views.map((view) => (
+                <TabsTrigger key={view} value={view}>
+                  {view}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
-        {viewMode === "Table" ? (
-          <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 shadow-[var(--shadow-soft)]">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[var(--card)] text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-                <tr>
-                  <th className="px-6 py-4">Code</th>
-                  <th className="px-6 py-4">Event</th>
-                  <th className="px-6 py-4">City</th>
-                  <th className="px-6 py-4">Date</th>
-                  <th className="px-6 py-4">Lead</th>
-                  <th className="px-6 py-4 text-right">Budget</th>
-                  <th className="px-6 py-4 text-right">Spent</th>
-                  <th className="px-6 py-4">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading
-                  ? Array.from({ length: 4 }, (_, index) => (
-                      <tr
-                        key={index}
-                        className="border-t border-[var(--border)]"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="h-3 w-16 rounded-full bg-black/10" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-3 w-32 rounded-full bg-black/10" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-3 w-20 rounded-full bg-black/10" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-3 w-20 rounded-full bg-black/10" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-3 w-20 rounded-full bg-black/10" />
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="ml-auto h-3 w-16 rounded-full bg-black/10" />
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="ml-auto h-3 w-16 rounded-full bg-black/10" />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="h-3 w-16 rounded-full bg-black/10" />
-                        </td>
-                      </tr>
-                    ))
-                  : filteredEvents.map((event) => (
-                      <tr
-                        key={event.code}
-                        className="border-t border-[var(--border)]"
-                      >
-                        <td className="px-6 py-4 text-xs uppercase tracking-[0.2em] text-[var(--muted)] font-lemon">
+        <Tabs value={viewMode}>
+          <TabsContent value="Table">
+            <Card>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Event</TableHead>
+                      <TableHead>City</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Lead</TableHead>
+                      <TableHead className="text-right">Budget</TableHead>
+                      <TableHead className="text-right">Spent</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading
+                      ? Array.from({ length: 4 }, (_, index) => (
+                          <TableRow key={index}>
+                            {Array.from({ length: 8 }, (_, cell) => (
+                              <TableCell key={cell}>
+                                <Skeleton className="h-3 w-20" />
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))
+                      : filteredEvents.map((event) => (
+                          <TableRow key={event.code}>
+                            <TableCell className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                              {event.code}
+                            </TableCell>
+                            <TableCell>
+                              <Link
+                                href={`/events/${event.code}`}
+                                className="font-semibold hover:underline"
+                              >
+                                {event.title}
+                              </Link>
+                            </TableCell>
+                            <TableCell>{event.city}</TableCell>
+                            <TableCell>{formatDate(event.date)}</TableCell>
+                            <TableCell>{event.lead}</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(event.budget)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(event.spent)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={statusStyles[event.status]}
+                              >
+                                {statusLabels[event.status]}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="List">
+            <div className="grid gap-4">
+              {loading
+                ? Array.from({ length: 3 }, (_, index) => (
+                    <Card key={index}>
+                      <CardContent className="space-y-3 pt-6">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-6 w-40" />
+                        <Skeleton className="h-3 w-32" />
+                      </CardContent>
+                    </Card>
+                  ))
+                : filteredEvents.map((event) => (
+                    <Card key={event.code}>
+                      <CardHeader>
+                        <CardDescription className="uppercase tracking-[0.2em]">
                           {event.code}
-                        </td>
-                        <td className="px-6 py-4">
-                          <Link
-                            href={`/events/${event.code}`}
-                            className="font-semibold text-[var(--foreground)]"
-                          >
-                            {event.title}
-                          </Link>
-                        </td>
-                        <td className="px-6 py-4">{event.city}</td>
-                        <td className="px-6 py-4">{formatDate(event.date)}</td>
-                        <td className="px-6 py-4">{event.lead}</td>
-                        <td className="px-6 py-4 text-right">
-                          {formatCurrency(event.budget)}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {formatCurrency(event.spent)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center rounded-[var(--radius-pill)] border px-3 py-1 text-xs font-semibold ${
-                              statusStyles[event.status]
-                            }`}
-                          >
-                            {statusLabels[event.status]}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-              </tbody>
-            </table>
-          </div>
-        ) : null}
-
-        {viewMode === "List" ? (
-          <div className="grid gap-4">
-            {loading
-              ? Array.from({ length: 3 }, (_, index) => (
-                  <div
-                    key={index}
-                    className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-6 shadow-[var(--shadow-soft)]"
-                  >
-                    <div className="h-3 w-20 rounded-full bg-black/10" />
-                    <div className="mt-4 h-6 w-40 rounded-full bg-black/10" />
-                    <div className="mt-3 h-3 w-32 rounded-full bg-black/10" />
-                  </div>
-                ))
-              : filteredEvents.map((event) => (
-                  <div
-                    key={event.code}
-                    className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-6 shadow-[var(--shadow-soft)]"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-6">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.3em] text-[var(--muted)] font-lemon">
-                          {event.code}
-                        </p>
-                        <Link
-                          href={`/events/${event.code}`}
-                          className="mt-2 block text-2xl font-semibold"
-                        >
-                          {event.title}
-                        </Link>
-                        <p className="mt-2 text-sm text-[var(--muted)]">
-                          {event.city} • {formatDate(event.date)} • Lead:{" "}
-                          {event.lead}
-                        </p>
-                      </div>
-                      <div className="space-y-3 text-right">
-                        <span
-                          className={`inline-flex items-center rounded-[var(--radius-pill)] border px-3 py-1 text-xs font-semibold ${
-                            statusStyles[event.status]
-                          }`}
+                        </CardDescription>
+                        <CardTitle>
+                          <Link href={`/events/${event.code}`}>{event.title}</Link>
+                        </CardTitle>
+                        <CardDescription>
+                          {event.city} • {formatDate(event.date)} • Lead: {event.lead}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex flex-wrap items-center justify-between gap-3">
+                        <Badge
+                          variant="outline"
+                          className={statusStyles[event.status]}
                         >
                           {statusLabels[event.status]}
-                        </span>
-                        <p className="text-sm text-[var(--muted)]">
-                          {formatCurrency(event.spent)} of{" "}
-                          {formatCurrency(event.budget)}
-                        </p>
-                        <p className="text-xs text-[var(--muted)]">
+                        </Badge>
+                        <div className="text-sm text-muted-foreground">
+                          {formatCurrency(event.spent)} of {formatCurrency(event.budget)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
                           {event.invoices} invoices • {event.photos} photos
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-          </div>
-        ) : null}
-
-        {viewMode === "Grid" ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {loading
-              ? Array.from({ length: 4 }, (_, index) => (
-                  <div
-                    key={index}
-                    className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-6 shadow-[var(--shadow-soft)]"
-                  >
-                    <div className="h-3 w-20 rounded-full bg-black/10" />
-                    <div className="mt-4 h-6 w-40 rounded-full bg-black/10" />
-                    <div className="mt-3 h-3 w-32 rounded-full bg-black/10" />
-                  </div>
-                ))
-              : filteredEvents.map((event) => (
-                  <div
-                    key={event.code}
-                    className="rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-6 shadow-[var(--shadow-soft)]"
-                  >
-                    <p className="text-xs uppercase tracking-[0.3em] text-[var(--muted)] font-lemon">
-                      {event.code}
-                    </p>
-                    <Link
-                      href={`/events/${event.code}`}
-                      className="mt-2 block text-2xl font-semibold"
-                    >
-                      {event.title}
-                    </Link>
-                    <p className="mt-2 text-sm text-[var(--muted)]">
-                      {event.city} • {formatDate(event.date)}
-                    </p>
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                      <span
-                        className={`inline-flex items-center rounded-[var(--radius-pill)] border px-3 py-1 text-xs font-semibold ${
-                          statusStyles[event.status]
-                        }`}
-                      >
-                        {statusLabels[event.status]}
-                      </span>
-                      <p className="text-sm text-[var(--muted)]">
-                        {formatCurrency(event.spent)}
-                      </p>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-[var(--muted)]">
-                      <span className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-3 py-1">
-                        Lead: {event.lead}
-                      </span>
-                      <span className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-3 py-1">
-                        {event.invoices} invoices
-                      </span>
-                      <span className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white px-3 py-1">
-                        {event.photos} photos
-                      </span>
-                    </div>
-                  </div>
-                ))}
-          </div>
-        ) : null}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+            </div>
+          </TabsContent>
+          <TabsContent value="Grid">
+            <div className="grid gap-4 md:grid-cols-2">
+              {loading
+                ? Array.from({ length: 4 }, (_, index) => (
+                    <Card key={index}>
+                      <CardContent className="space-y-3 pt-6">
+                        <Skeleton className="h-3 w-20" />
+                        <Skeleton className="h-6 w-40" />
+                        <Skeleton className="h-3 w-32" />
+                      </CardContent>
+                    </Card>
+                  ))
+                : filteredEvents.map((event) => (
+                    <Card key={event.code}>
+                      <CardHeader>
+                        <CardDescription className="uppercase tracking-[0.2em]">
+                          {event.code}
+                        </CardDescription>
+                        <CardTitle>
+                          <Link href={`/events/${event.code}`}>{event.title}</Link>
+                        </CardTitle>
+                        <CardDescription>
+                          {event.city} • {formatDate(event.date)}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <Badge
+                            variant="outline"
+                            className={statusStyles[event.status]}
+                          >
+                            {statusLabels[event.status]}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {formatCurrency(event.spent)}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                          <Badge variant="secondary">Lead: {event.lead}</Badge>
+                          <Badge variant="secondary">
+                            {event.invoices} invoices
+                          </Badge>
+                          <Badge variant="secondary">{event.photos} photos</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
