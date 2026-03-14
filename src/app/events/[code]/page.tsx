@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { EventDetails } from "@/app/events/_components/event-details";
 import { useEventsData } from "@/lib/use-events";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function EventDetailPage() {
   const params = useParams<{ code?: string }>();
@@ -14,54 +16,53 @@ export default function EventDetailPage() {
   if (!event && loading) {
     return (
       <div className="px-6 py-8 md:px-8 md:py-10">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-8 shadow-[var(--shadow-card)]">
-          <p className="text-sm text-[var(--muted)]">Loading event details…</p>
-        </div>
+        <Card className="mx-auto w-full max-w-3xl">
+          <CardContent className="py-6 text-sm text-muted-foreground">
+            Loading event details…
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!event) {
     return (
-      <div className="px-6 py-8 md:px-8 md:py-10 page-animate">
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 rounded-[var(--radius-card)] border border-[var(--border)] bg-white/90 p-8 shadow-[var(--shadow-card)]">
+      <div className="px-6 py-8 md:px-8 md:py-10">
+        <Card className="mx-auto w-full max-w-3xl">
           {error ? (
-            <div className="rounded-[var(--radius-card)] border border-brand-orange/30 bg-brand-orange/10 px-4 py-3 text-sm text-brand-dark">
+            <CardContent className="border-b py-4 text-sm text-destructive">
               {error}
-            </div>
+            </CardContent>
           ) : null}
-          <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-[var(--muted)] font-lemon">
-              Event details
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold">
-              Event not found
-            </h1>
-            <p className="mt-2 text-sm text-[var(--muted)]">
+          <CardHeader>
+            <CardTitle>Event not found</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
               We could not locate an event with code “{code}”.
             </p>
-          </div>
-          <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[var(--card)] p-4 text-sm text-[var(--muted)]">
-            Available event codes:
-            <div className="mt-2 flex flex-wrap gap-2">
-              {events.map((item) => (
-                <Link
-                  key={item.code}
-                  href={`/events/${item.code}`}
-                  className="rounded-[var(--radius-pill)] border border-[var(--border)] bg-white/90 px-3 py-1 text-xs font-semibold text-[var(--foreground)]"
-                >
-                  {item.code}
-                </Link>
-              ))}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">
+                Available event codes:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {events.map((item) => (
+                  <Button
+                    key={item.code}
+                    asChild
+                    size="sm"
+                    variant="secondary"
+                  >
+                    <Link href={`/events/${item.code}`}>{item.code}</Link>
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-          <Link
-            href="/events"
-            className="text-sm font-semibold text-brand-orange"
-          >
-            Back to events
-          </Link>
-        </div>
+            <Button asChild variant="link" className="px-0">
+              <Link href="/events">Back to events</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
