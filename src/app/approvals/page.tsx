@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useEventsData } from "@/lib/use-events";
+import { useAuth } from "@/contexts/auth-context";
 import { formatDate } from "@/lib/sample-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { auth } from "@/lib/firebase";
 
 const stages = [
   { key: "regional", label: "Regional Head" },
@@ -53,13 +55,20 @@ type StageKey = (typeof stages)[number]["key"];
 type ActionStatus = (typeof actions)[number];
 type StatusFilter = (typeof statusFilters)[number];
 
+const statusClasses: Record<ActionStatus, string> = {
+  Pending: "bg-secondary text-secondary-foreground border-secondary",
+  Approved: "bg-emerald-100 text-emerald-900 border-emerald-200",
+  Rejected: "bg-rose-100 text-rose-900 border-rose-200",
+  "Need Changes": "bg-amber-100 text-amber-900 border-amber-200",
+};
+
 export default function ApprovalsPage() {
   const { data: events, loading, error, refresh } = useEventsData();
+  const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
-  const [currentRole, setCurrentRole] = useState<StageKey>("regional");
   const [modalOpen, setModalOpen] = useState(false);
   const [activeEventCode, setActiveEventCode] = useState<string | null>(null);
   const [activeStage, setActiveStage] = useState<StageKey>("regional");
@@ -68,6 +77,9 @@ export default function ApprovalsPage() {
     by: "",
     notes: "",
   });
+
+  // The stage this user is allowed to edit
+  const myStage = user?.role as StageKey | undefined;
 
   const updateApproval = async (
     eventCode: string,
@@ -79,9 +91,13 @@ export default function ApprovalsPage() {
     setSaving(true);
     setActionError(null);
     try {
+      const token = await auth.currentUser?.getIdToken();
       const response = await fetch("/api/approvals", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ eventCode, stage, status, by, notes }),
       });
       const payload = await response.json();
@@ -109,7 +125,7 @@ export default function ApprovalsPage() {
     ];
     if (statuses.includes("Rejected")) return "Rejected";
     if (statuses.includes("Need Changes")) return "Need Changes";
-    if (statuses.every((status) => status === "Approved")) return "Approved";
+    if (statuses.every((s) => s === "Approved")) return "Approved";
     return "Pending";
   };
 
@@ -127,13 +143,6 @@ export default function ApprovalsPage() {
     });
   }, [events, searchTerm, statusFilter]);
 
-  const statusClasses: Record<ActionStatus, string> = {
-    Pending: "bg-secondary text-secondary-foreground border-secondary",
-    Approved: "bg-emerald-100 text-emerald-900 border-emerald-200",
-    Rejected: "bg-rose-100 text-rose-900 border-rose-200",
-    "Need Changes": "bg-amber-100 text-amber-900 border-amber-200",
-  };
-
   const openModal = (eventCode: string, stage: StageKey) => {
     const event = events.find((item) => item.code === eventCode);
     const info = event?.approvals?.[stage];
@@ -141,11 +150,13 @@ export default function ApprovalsPage() {
     setActiveStage(stage);
     setModalDraft({
       status: (info?.status ?? "Pending") as ActionStatus,
-      by: info?.by ?? "",
+      by: info?.by ?? user?.name ?? "",
       notes: info?.notes ?? "",
     });
     setModalOpen(true);
   };
+
+  const myStageLabel = stages.find((s) => s.key === myStage)?.label ?? "";
 
   return (
     <div className="px-6 py-8 md:px-8 md:py-10">
@@ -168,6 +179,11 @@ export default function ApprovalsPage() {
             </h1>
             <p className="mt-3 text-sm text-muted-foreground">
               Regional → YGPT Head → Accounts Team.
+              {myStageLabel ? (
+                <span className="ml-2 font-medium text-foreground">
+                  You are acting as: {myStageLabel}
+                </span>
+              ) : null}
             </p>
           </div>
           <Button asChild variant="outline">
@@ -179,18 +195,17 @@ export default function ApprovalsPage() {
           <CardHeader>
             <CardTitle>Filters</CardTitle>
             <CardDescription>
-              Updates are restricted to the selected role. Use the Update button in
-              that column to open the approval modal.
+              You can only update approvals for your assigned role ({myStageLabel}).
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
+          <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 Search events
               </label>
               <Input
                 value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by event code, title, or city"
               />
             </div>
@@ -209,26 +224,6 @@ export default function ApprovalsPage() {
                   {statusFilters.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Acting as
-              </label>
-              <Select
-                value={currentRole}
-                onValueChange={(value) => setCurrentRole(value as StageKey)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {stages.map((stage) => (
-                    <SelectItem key={stage.key} value={stage.key}>
-                      {stage.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -253,12 +248,8 @@ export default function ApprovalsPage() {
                 {loading
                   ? Array.from({ length: 6 }, (_, index) => (
                       <TableRow key={index}>
-                        <TableCell>
-                          <Skeleton className="h-3 w-32" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-3 w-20" />
-                        </TableCell>
+                        <TableCell><Skeleton className="h-3 w-32" /></TableCell>
+                        <TableCell><Skeleton className="h-3 w-20" /></TableCell>
                         {stages.map((stage) => (
                           <TableCell key={stage.key}>
                             <Skeleton className="h-10 w-36" />
@@ -285,24 +276,18 @@ export default function ApprovalsPage() {
                             </p>
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={statusClasses[overall]}
-                            >
+                            <Badge variant="outline" className={statusClasses[overall]}>
                               {overall}
                             </Badge>
                           </TableCell>
                           {stages.map((stage) => {
                             const info = event.approvals?.[stage.key];
+                            const isMyStage = stage.key === myStage;
                             return (
                               <TableCell key={stage.key} className="space-y-2">
                                 <Badge
                                   variant="outline"
-                                  className={
-                                    statusClasses[
-                                      (info?.status ?? "Pending") as ActionStatus
-                                    ]
-                                  }
+                                  className={statusClasses[(info?.status ?? "Pending") as ActionStatus]}
                                 >
                                   {info?.status ?? "Pending"}
                                 </Badge>
@@ -310,24 +295,28 @@ export default function ApprovalsPage() {
                                   {info?.by ? `By ${info.by}` : "Not assigned"}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {info?.at
-                                    ? `Updated ${formatDate(info.at)}`
-                                    : "No update yet"}
+                                  {info?.at ? `Updated ${formatDate(info.at)}` : "No update yet"}
                                 </p>
                                 {info?.notes ? (
                                   <p className="text-xs text-muted-foreground">
                                     Notes: {info.notes}
                                   </p>
                                 ) : null}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  disabled={saving || currentRole !== stage.key}
-                                  onClick={() => openModal(event.code, stage.key)}
-                                  className="w-full"
-                                >
-                                  Update
-                                </Button>
+                                {isMyStage ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={saving}
+                                    onClick={() => openModal(event.code, stage.key)}
+                                    className="w-full"
+                                  >
+                                    Update
+                                  </Button>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground italic">
+                                    Read only
+                                  </p>
+                                )}
                               </TableCell>
                             );
                           })}
@@ -346,7 +335,7 @@ export default function ApprovalsPage() {
             <DialogHeader>
               <DialogTitle>Update approval</DialogTitle>
               <DialogDescription>
-                {stages.find((stage) => stage.key === activeStage)?.label} • Event:{" "}
+                {stages.find((s) => s.key === activeStage)?.label} • Event:{" "}
                 {activeEventCode}
               </DialogDescription>
             </DialogHeader>
@@ -358,10 +347,7 @@ export default function ApprovalsPage() {
                 <Select
                   value={modalDraft.status}
                   onValueChange={(value) =>
-                    setModalDraft((prev) => ({
-                      ...prev,
-                      status: value as ActionStatus,
-                    }))
+                    setModalDraft((prev) => ({ ...prev, status: value as ActionStatus }))
                   }
                 >
                   <SelectTrigger>
@@ -382,8 +368,8 @@ export default function ApprovalsPage() {
                 </label>
                 <Input
                   value={modalDraft.by}
-                  onChange={(event) =>
-                    setModalDraft((prev) => ({ ...prev, by: event.target.value }))
+                  onChange={(e) =>
+                    setModalDraft((prev) => ({ ...prev, by: e.target.value }))
                   }
                   placeholder="Name"
                 />
@@ -394,11 +380,8 @@ export default function ApprovalsPage() {
                 </label>
                 <Textarea
                   value={modalDraft.notes}
-                  onChange={(event) =>
-                    setModalDraft((prev) => ({
-                      ...prev,
-                      notes: event.target.value,
-                    }))
+                  onChange={(e) =>
+                    setModalDraft((prev) => ({ ...prev, notes: e.target.value }))
                   }
                   rows={3}
                   placeholder="Optional notes"
@@ -410,7 +393,7 @@ export default function ApprovalsPage() {
                 Cancel
               </Button>
               <Button
-                disabled={saving || currentRole !== activeStage}
+                disabled={saving}
                 onClick={() =>
                   updateApproval(
                     activeEventCode,
@@ -424,13 +407,6 @@ export default function ApprovalsPage() {
                 Save approval
               </Button>
             </DialogFooter>
-            {currentRole !== activeStage ? (
-              <p className="text-xs text-muted-foreground">
-                Switch role to{" "}
-                {stages.find((stage) => stage.key === activeStage)?.label} to
-                approve.
-              </p>
-            ) : null}
           </DialogContent>
         ) : null}
       </Dialog>

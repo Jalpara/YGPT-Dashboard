@@ -9,6 +9,7 @@ import {
   statusStyles,
 } from "@/lib/sample-data";
 import { useEventsData } from "@/lib/use-events";
+import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -219,7 +220,17 @@ function EventCalendar({
 }
 
 export default function EventsPage() {
-  const { data: events, loading, error } = useEventsData();
+  const { data: allEvents, loading, error } = useEventsData();
+  const { user } = useAuth();
+
+  // Regional Heads only see events from their assigned city
+  const events = useMemo(() => {
+    if (user?.role === "regional" && user.city) {
+      return allEvents.filter((e) => e.code.startsWith(user.city!));
+    }
+    return allEvents;
+  }, [allEvents, user]);
+
   const [activeFilter, setActiveFilter] = useState("All");
   const [viewMode, setViewMode] = useState<ViewMode>("Table");
   const [searchTerm, setSearchTerm] = useState("");

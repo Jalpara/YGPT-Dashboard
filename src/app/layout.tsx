@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
+import { AuthProvider } from "@/contexts/auth-context";
 
 const body = Inter({
   variable: "--font-body",
@@ -23,7 +24,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${body.className} antialiased`}>
         <div className="min-h-screen bg-background text-foreground">
-          <AppShell>{children}</AppShell>
+          <AuthProvider>
+            <AppShell>{children}</AppShell>
+          </AuthProvider>
         </div>
       </body>
     </html>
